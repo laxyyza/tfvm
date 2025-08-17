@@ -20,6 +20,7 @@ variable "user_data_path" {
 
 variable "password" {
   type = string
+  default = ""
 }
 
 variable "username" {

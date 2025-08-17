@@ -12,7 +12,7 @@ autostart: false
 # Password should be a SHA-512 hash, preferably defined in terraform.tfvars
 user:
   name: user
-  passwd: ${password}
+  passwd: "${password}"
 
 # -----------------------------
 # Base image / shell
