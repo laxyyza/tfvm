@@ -12,8 +12,10 @@ locals {
   network = local.config.network
   write_files = local.config.write_files
   storage_pool = local.config.storage_pool
+  shell = lookup(local.config, "shell", "/bin/bash")
 
   custom_pool = local.config.storage_pool == {} ? false : true
+  autostart = local.config.autostart
 
   ssh_pub_key = file(pathexpand("~/.ssh/id_rsa.pub"))
 }

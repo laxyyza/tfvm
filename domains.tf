@@ -12,7 +12,8 @@ resource "libvirt_domain" "domains" {
   }
 
   network_interface {
-    network_name = lookup(each.value, "network_name", "default")
+    network_id = libvirt_network.network.id
+    hostname = each.value.name
     addresses = lookup(each.value, "addresses", [])
   }
 
@@ -22,5 +23,5 @@ resource "libvirt_domain" "domains" {
     target_type = "serial"
   }
 
-  autostart = lookup(each.value, "autostart", false)
+  autostart = local.autostart
 }

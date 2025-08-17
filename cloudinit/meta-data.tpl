@@ -1,1 +1,2 @@
-local-hostname: ${ hostname }
+instance-id: ${ vm_name }
+local-hostname: ${ vm_name }.${ domain }

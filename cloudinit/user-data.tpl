@@ -1,5 +1,7 @@
 #cloud-config
 manage_etc_hosts: true
+package_update: true
+package_upgrade: true
 users:
   - name: ${user.name}
 %{ if length(try(user.ssh_authorized_keys, [ssh_pub_key])) > 0 ~}
@@ -10,7 +12,7 @@ users:
 %{ endif ~}
     sudo: ALL=(ALL) NOPASSWD:ALL
     groups: [users, sudo]
-    shell: /bin/bash
+    shell: ${ shell }
     passwd: "${ user.passwd }"
     lock_passwd: false
 packages:
