@@ -1,49 +1,96 @@
+# -----------------------------
+# Global VM/host behavior
+# -----------------------------
+
+# Whether to automatically start VMs and the libvirt network when the host boots.
+autostart: false
+
+# -----------------------------
+# User defaults
+# -----------------------------
+# User configuration for all VMs
+# Password should be a SHA-512 hash, preferably defined in terraform.tfvars
+user:
+  name: user
+  passwd: ${password}
+
+# -----------------------------
+# Base image / shell
+# -----------------------------
+# Base image configuration
+# Path to local QCOW2/IMG/ISO file or URL to cloud image.
+base_image:
+  name: debian.qcow2
+  source: /var/lib/libvirt/images/debian-13-generic-amd64.qcow2
+  #source: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
+
+# Default shell for all users on VMs
+shell: /bin/bash
+
+# -----------------------------
+# Networking
+# -----------------------------
+# Libvirt network definition
+# Used to define VM networking.
+network:
+  name: test-vms
+  domain: vm.local
+  mode: nat              # "nat" (default), "none", "route", "open", "bridge"
+  addresses: [10.0.0.0/24]  # subnet for VMs
+  dns: true              # enable DNS for the network
+
+# -----------------------------
+# Storage
+# -----------------------------
+# Libvirt storage pool
+# Default is empty (uses "default" pool). You can define a custom pool if needed.
+storage_pool: {}
+# Example custom pool:
+# storage_pool:
+#   name: tfvm
+#   path: /home/user/my-vm-storage
+
+# -----------------------------
+# Reusable cloud-init groups
+# -----------------------------
+
+# cloud-init runcmd
+# Commands to run on VM first boot. Grouped by keys for reuse.
 cmds:
   default:
+    # Enable and start the QEMU guest agent for better VM integration.
     - systemctl enable --now qemu-guest-agent
-  update:
-    - apt-get update
-    - apt-get upgrade
+  # Example of an update group:
+  # update:
+  #   - apt-get update
+  #   - apt-get upgrade
 
+# cloud-init packages
+# Packages to install on VM first boot. Grouped by keys for reuse.
 packages:
   default:
     - qemu-guest-agent
     - htop
     - fastfetch
 
-user:
-  name: user
-  passwd: ${password}
+# cloud-init write_files
+# Files to create/write on VM first boot. Grouped by keys for reuse.
+write_files:
+  default:
+    - path: /etc/environment
+      content: |
+        TERM=xterm-256color
 
-write_files: {}
-
-network:
-  default_gateway: 192.168.100.1
-  nameservers:
-    - 192.168.100.1
-
-storage_pool: {}
-# storage_pool:
-#   name: tfvm
-#   path: /home/user/my-vm-storage
-
-# source - path to qcow2/img/iso or URL link.
-base_image:
-  name: debian.qcow2
-  source: /var/lib/libvirt/images/debian-13-generic-amd64.qcow2
-  #source: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
-
+# -----------------------------
+# VM definitions
+# -----------------------------
+# Each VM is a dictionary of configuration values.
 vms:
   - name: test-vm-01
-    vcpu: 2
-    memory: 2048
-    disk: 16 
-    network_name: "default"
-    dhcp: false
-    addresses:
-      - 192.168.100.40
-    cmd_ids:
-      - default
-    package_ids:
-      - default
-    write_files: []
+    vcpu: 2               # number of virtual CPUs
+    memory: 2048          # RAM in MB
+    disk: 16              # Disk size in GB
+    addresses: []         # optional static IP addresses
+    cmd_ids: [default]    # reference to cmds groups to run
+    package_ids: [default] # reference to packages groups to install
+    write_files: [default] # reference to write_files groups
