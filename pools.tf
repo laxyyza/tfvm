@@ -7,3 +7,4 @@ resource "libvirt_pool" "storage" {
     path = local.storage_pool.path
   }
 }
+ 
