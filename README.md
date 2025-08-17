@@ -26,8 +26,7 @@ terraform init
 
 ## Apply configuration
 
-[!NOTE]
-
+> [!NOTE]
 > The default config fetches a Debian base image from the internet. Depending on your network speed, the initial download may take a while. To customize the base image, see [Recommended Config Changes](#recommended-config-changes).
 
 ```bash
