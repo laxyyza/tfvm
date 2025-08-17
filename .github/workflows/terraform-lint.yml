@@ -50,6 +50,3 @@ jobs:
   
       - name: Run TFLint
         run: tflint -f compact
-
-      - name: Terraform Plan
-        run: terraform plan

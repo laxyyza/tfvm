@@ -6,7 +6,7 @@ resource "libvirt_network" "network" {
   autostart = local.autostart
 
   dns {
-    enabled = local.network.dnssss
+    enabled = local.network.dns
   }
 }
 
