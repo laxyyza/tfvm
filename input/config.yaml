@@ -1,0 +1,49 @@
+cmds:
+  default:
+    - systemctl enable --now qemu-guest-agent
+  update:
+    - apt-get update
+    - apt-get upgrade
+
+packages:
+  default:
+    - qemu-guest-agent
+    - htop
+    - fastfetch
+
+user:
+  name: user
+  passwd: ${password}
+
+write_files: {}
+
+network:
+  default_gateway: 192.168.100.1
+  nameservers:
+    - 192.168.100.1
+
+storage_pool: {}
+# storage_pool:
+#   name: tfvm
+#   path: /home/user/my-vm-storage
+
+# source - path to qcow2/img/iso or URL link.
+base_image:
+  name: debian.qcow2
+  source: /var/lib/libvirt/images/debian-13-generic-amd64.qcow2
+  #source: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
+
+vms:
+  - name: test-vm-01
+    vcpu: 2
+    memory: 2048
+    disk: 16 
+    network_name: "default"
+    dhcp: false
+    addresses:
+      - 192.168.100.40
+    cmd_ids:
+      - default
+    package_ids:
+      - default
+    write_files: []
