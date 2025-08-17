@@ -17,6 +17,6 @@ locals {
   custom_pool = local.config.storage_pool == {} ? false : true
   autostart = local.config.autostart
 
-  ssh_pub_key = file(pathexpand("~/.ssh/id_rsa.pub"))
+  ssh_pub_key = file(pathexpand(var.ssh_pub_key_path))
 }
 

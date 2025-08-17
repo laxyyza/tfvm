@@ -27,3 +27,8 @@ variable "username" {
   type = string
   default = "user"
 }
+
+variable "ssh_pub_key_path" {
+  type = string
+  default = "~/.ssh/id_rsa.pub"
+}
