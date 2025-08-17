@@ -18,11 +18,6 @@ variable "user_data_path" {
   default = "cloudinit/user-data.tpl"
 }
 
-variable "network_config_path" {
-  type = string
-  default = "cloudinit/network-config.tpl"
-}
-
 variable "password" {
   type = string
 }
