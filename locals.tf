@@ -18,5 +18,15 @@ locals {
   autostart = local.config.autostart
 
   ssh_pub_key = file(pathexpand(var.ssh_pub_key_path))
+
+  vm_disks = flatten([
+    for vm in local.vms : [
+      for disk_idx, size in vm.disks : {
+        vm_name = vm.name
+        disk_idx = disk_idx
+        size = size 
+      }
+    ]
+  ])
 }
 

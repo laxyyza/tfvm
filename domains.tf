@@ -11,7 +11,16 @@ resource "libvirt_domain" "domains" {
   }
 
   disk {
-    volume_id = libvirt_volume.volumes[each.value.name].id
+    volume_id = libvirt_volume.root[each.value.name].id
+  }
+
+  dynamic "disk" {
+    for_each = [ 
+      for d in local.vm_disks : d if d.vm_name == each.key
+    ]
+    content {
+      volume_id = libvirt_volume.extra["${each.key}-${disk.value.disk_idx}"].id
+    }
   }
 
   network_interface {

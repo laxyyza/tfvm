@@ -89,7 +89,8 @@ vms:
   - name: test-vm-01
     vcpu: 2               # number of virtual CPUs
     memory: 2048          # RAM in MB
-    disk: 16              # Disk size in GB
+    root_size: 16         # Disk size in GB
+    disks: []
     addresses: []         # optional static IP addresses
     cmd_ids: [default]    # reference to cmds groups to run
     package_ids: [default] # reference to packages groups to install
