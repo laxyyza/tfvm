@@ -4,8 +4,11 @@ resource "libvirt_domain" "domains" {
   name = each.value.name
   vcpu = each.value.vcpu
   memory = each.value.memory
-
   cloudinit = libvirt_cloudinit_disk.common[each.value.name].id
+
+  cpu {
+    mode = var.cpu_mode
+  }
 
   disk {
     volume_id = libvirt_volume.volumes[each.value.name].id

@@ -32,3 +32,8 @@ variable "ssh_pub_key_path" {
   type = string
   default = "~/.ssh/id_rsa.pub"
 }
+
+variable "cpu_mode" {
+  type = string
+  default = "host-passthrough"
+}
