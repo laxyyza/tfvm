@@ -1,0 +1,169 @@
+# ------------------------------------------------------------------
+# RKE2 Kubernetes VM Configuration for Libvirt
+# ------------------------------------------------------------------
+# This configuration defines VMs, networking, storage, and cloud-init
+# setup for a small RKE2 Kubernetes cluster using libvirt.
+# It includes:
+#   - Global host behavior (autostart)
+#   - Default user and password hash
+#   - Base image and shell
+#   - Networking and storage pool definitions
+#   - Reusable cloud-init commands, packages, and files
+#   - VM definitions for master and worker nodes
+# ------------------------------------------------------------------
+
+# -----------------------------
+# Global VM/host behavior
+# -----------------------------
+
+# Automatically start VMs and the libvirt network when the host boots.
+autostart: false
+
+# -----------------------------
+# User defaults
+# -----------------------------
+# Default user configuration for all VMs.
+# 'passwd' should be a SHA-512 hash. Can be sourced from terraform.tfvars.
+user:
+  name: user
+  passwd: "${password}"
+
+# -----------------------------
+# Base image / shell
+# -----------------------------
+# Base image for creating VMs.
+# Can be a local file path or a URL to a cloud image.
+base_image:
+  name: debian.qcow2
+  source: /var/lib/libvirt/images/debian-13-generic-amd64.qcow2
+  # Alternative cloud image URL:
+  # source: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
+
+# Default shell for all users on VMs.
+shell: /bin/bash
+
+# -----------------------------
+# Networking
+# -----------------------------
+# Libvirt network configuration for VMs.
+network:
+  name: k8s-nat
+  domain: k8s.local
+  mode: nat                     # VM network mode: "nat", "none", "route", "open", "bridge"
+  addresses: [192.168.100.0/24]  # Subnet for VM IPs
+  dns: true                     # Enable DNS resolution for VMs on this network
+
+# -----------------------------
+# Storage
+# -----------------------------
+# Libvirt storage pool configuration.
+# Empty defaults to the "default" libvirt pool. Can define a custom pool.
+storage_pool: {}
+# Example custom pool:
+# storage_pool:
+#   name: tfvm
+#   path: /home/user/my-vm-storage
+
+# -----------------------------
+# Reusable cloud-init groups
+# -----------------------------
+
+# Commands to execute on VM first boot, grouped for reuse.
+cmds:
+  default:
+    - systemctl enable --now qemu-guest-agent
+  master: 
+    - curl -sfL https://get.rke2.io | sh -
+    - systemctl enable rke2-server --now
+  worker: 
+    - mkdir -p /root/.ssh /etc/rancher/rke2
+    - echo "${ssh_prv_key}" | base64 -d > /root/.ssh/id_rsa
+    - chmod 600 /root/.ssh/id_rsa
+    - curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
+    - TOKEN=$(ssh -o StrictHostKeyChecking=no user@k8s-master-01 "sudo bash -c 'while [ ! -f /var/lib/rancher/rke2/server/node-token ]; do sleep 1; done; cat /var/lib/rancher/rke2/server/node-token'")
+    - |
+      cat <<EOF | tee /etc/rancher/rke2/config.yaml
+      server: https://k8s-master-01:9345
+      token: $TOKEN
+      EOF
+    - systemctl enable rke2-agent --now
+
+# Packages to install on VM first boot, grouped by role.
+packages:
+  default:
+    - qemu-guest-agent
+    - htop
+    - fastfetch
+    - curl
+
+# Files to create/write on VM first boot, grouped by role.
+write_files:
+  default:
+    - path: /etc/environment
+      content: |
+        TERM=xterm-256color
+  master:
+    - path: /etc/profile.d/custom_envs.sh
+      content: |
+        #!/bin/sh
+        export KUBECONFIG="/etc/rancher/rke2/rke2.yaml"
+        export PATH="$${PATH}:/var/lib/rancher/rke2/bin"
+
+    - path: /etc/rancher/rke2/config.yaml
+      content: |
+        write-kubeconfig-mode: "0644"
+        node-taint:
+          - "CriticalAddonsOnly=true:NoExecute"
+
+    - path: /root/metallb-pool.yaml
+      content: |
+        apiVersion: metallb.io/v1beta1
+        kind: IPAddressPool
+        metadata:
+          name: k8s-ip-pool
+          namespace: metallb-system
+        spec:
+          addresses:
+          - 192.168.100.240-192.168.100.250
+        ---
+        apiVersion: metallb.io/v1beta1
+        kind: L2Advertisement
+        metadata:
+          name: example
+          namespace: metallb-system
+  worker: []
+
+# -----------------------------
+# VM definitions
+# -----------------------------
+# Each VM's configuration.
+vms:
+  - name: k8s-master-01
+    vcpu: 4
+    memory: 4096
+    root_size: 10         # Root disk size in GB
+    disks: []             # Additional disks in GB
+    addresses: [192.168.100.10]  # Optional static IP
+    cmd_ids: [default, master]    
+    package_ids: [default]
+    write_files: [default, master]
+
+  - name: k8s-worker-01
+    vcpu: 4
+    memory: 4096
+    root_size: 16
+    disks: [20]           # Extra disk of 20GB
+    addresses: [192.168.100.11]
+    cmd_ids: [default, worker]    
+    package_ids: [default]
+    write_files: [default, worker]
+
+  - name: k8s-worker-02
+    vcpu: 4
+    memory: 4096
+    root_size: 16
+    disks: [20]           # Extra disk of 20GB
+    addresses: [192.168.100.12]
+    cmd_ids: [default, worker]    
+    package_ids: [default]
+    write_files: [default, worker]
