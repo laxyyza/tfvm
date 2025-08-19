@@ -1,7 +1,12 @@
 locals {
+  ssh_pub_key = file(pathexpand(var.ssh_pub_key_path))
+  ssh_prv_key = base64encode(file(pathexpand(var.ssh_prv_key_path)))
+
   config = yamldecode(templatefile(var.config_file, {
     password = var.password
     username = var.username
+    ssh_prv_key = local.ssh_prv_key
+    ssh_pub_key = local.ssh_pub_key
   }))
 
   vms = local.config.vms
@@ -16,8 +21,6 @@ locals {
 
   custom_pool = local.config.storage_pool == {} ? false : true
   autostart = local.config.autostart
-
-  ssh_pub_key = file(pathexpand(var.ssh_pub_key_path))
 
   vm_disks = flatten([
     for vm in local.vms : [
